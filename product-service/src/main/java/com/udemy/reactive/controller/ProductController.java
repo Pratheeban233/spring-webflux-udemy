@@ -29,7 +29,6 @@ public class ProductController {
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }
-
     @PostMapping
     public Mono<ProductDto> insertProduct(@RequestBody Mono<ProductDto> productDtoMono) {
         return this.productService.insertProduct(productDtoMono);

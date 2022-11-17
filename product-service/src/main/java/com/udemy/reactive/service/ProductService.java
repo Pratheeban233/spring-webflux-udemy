@@ -8,12 +8,16 @@ import org.springframework.data.domain.Range;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 @Service
 public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private Sinks.Many<ProductDto> sink;
 
     public Flux<ProductDto> getAllProducts() {
         return this.productRepository.findAll()
@@ -29,10 +33,11 @@ public class ProductService {
         return productDtoMono
                 .map(EntityDtoUtil::toEntity)
                 .flatMap(this.productRepository::insert)
-                .map(EntityDtoUtil::toDto);
+                .map(EntityDtoUtil::toDto)
+                .doOnNext(this.sink::tryEmitNext);
     }
 
-    public Mono<ProductDto>     updateProduct(String id, Mono<ProductDto> productDtoMono) {
+    public Mono<ProductDto>   updateProduct(String id, Mono<ProductDto> productDtoMono) {
         return this.productRepository.findById(id)
                 .flatMap(p -> productDtoMono //p just checking the object is existing or not
                         .map(EntityDtoUtil::toEntity)
