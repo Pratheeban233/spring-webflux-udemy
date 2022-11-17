@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 @RestController
 @RequestMapping("product")
 public class ProductController {
@@ -22,6 +24,7 @@ public class ProductController {
 
     @GetMapping("{id}")
     public Mono<ResponseEntity<ProductDto>> getProductById(@PathVariable("id") String id) {
+        this.simulateRandomException();
         return this.productService.getProductById(id)
                 .map(ResponseEntity::ok)
                 .defaultIfEmpty(ResponseEntity.notFound().build());
@@ -47,5 +50,11 @@ public class ProductController {
     @GetMapping("price-range")
     public Flux<ProductDto> getProductBtwPriceRange(@RequestParam("min") double min, @RequestParam("max") double max) {
         return this.productService.getProductBtwPriceRange(min, max);
+    }
+
+    private void simulateRandomException() {
+        int nextInt = ThreadLocalRandom.current().nextInt(1, 10);
+        if(nextInt > 5)
+            throw new RuntimeException("Something is wrong");
     }
 }

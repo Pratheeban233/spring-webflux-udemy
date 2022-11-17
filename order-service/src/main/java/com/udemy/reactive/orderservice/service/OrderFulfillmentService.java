@@ -13,6 +13,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
 
 @Service
 public class OrderFulfillmentService {
@@ -43,6 +46,7 @@ public class OrderFulfillmentService {
     private Mono<RequestContext> productRequestResponse(RequestContext context) {
         return this.productClient
                 .getProductById(context.getOrderRequestDto().getProductId())
+                .doOnNext(productDto -> System.out.println("productDto = " + productDto))
                 .doOnNext(context::setProductDto)
                 .thenReturn(context);
     }
@@ -50,7 +54,9 @@ public class OrderFulfillmentService {
     private Mono<RequestContext> userRequestResponse(RequestContext context) {
         return this.userClient
                 .authorizeTransaction(context.getTransactionRequestDto())
+                .doOnNext(transactionResponseDto -> System.out.println("transactionResponseDto = " + transactionResponseDto))
                 .doOnNext(context::setTransactionResponseDto)
+                .retryWhen(Retry.fixedDelay(5, Duration.ofSeconds(1)))
                 .thenReturn(context);
     }
 
@@ -59,4 +65,5 @@ public class OrderFulfillmentService {
                         .stream().map(EntityDtoUtil::getOrderResponse))
                 .subscribeOn(Schedulers.boundedElastic());
     }
+
 }
